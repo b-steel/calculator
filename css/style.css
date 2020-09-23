@@ -1,0 +1,26 @@
+.inputs {
+}
+.numbers{
+    width: 60%;
+    float:left;
+
+}
+.operators{
+    width: 40%;
+    float:left;
+}
+.operator{
+    width: 45%;
+}
+.number {
+    width: 30%;
+}
+#btn-num0 {
+    width: 60%;
+
+}
+.display {
+    border: 1px;
+    border-style: solid;
+    text-align: right;
+}
