@@ -1,14 +1,16 @@
 class TreeNode {
     constructor(value) {
         this.value = value;
-        this.descendents = [];
+        this.priority = 0;
+        this.branch1 = [];
+        this.branch2 = []
     }
 }
 function evaluateTree (t) {
     if (isLeaf(t)) {
-        return label(t);
+        return t.value;
     } else {
-        return label(t)(evaluateTree(branch1(t)), evaluateTree(branch2(t)));
+        return t.value(evaluateTree(t.branch1), evaluateTree(t.branch2));
     }
 }
 z = new TreeNode(3);
@@ -16,25 +18,15 @@ y = new TreeNode(2);
 x = new TreeNode(4);
 m = new TreeNode(multiply);
 a = new TreeNode(add);
-a.descendents.push(m, x);
-m.descendents.push(y,z);
+a.branch1 = 4;
+a.branch2 = m;
+m.branch1 = 2;
+m.branch2 = 3;
 
 function isLeaf(t) {
-    return (t.descendents.length === 0);
-}
-function label (t) {
-    return t.value;
-}
-function branch1 (t) {
-    return t.descendents[0];
-}
-function branch2 (t) {
-    return t.descendents[1];
+    return (t.branch1.length === 0 && t.branch2.length === 0)   ;
 }
 
-function branches (t) {
-    return t.descendents;
-}
 const pemdas = {
     '+': 0, 
     '-': 0,
@@ -43,7 +35,7 @@ const pemdas = {
     '**': 2, 
     '(': 3, 
     ')': 3
-}
+};
 // BASIC OPERATIONS
 // For operations, args is always a two element array of argument1, argument2
 function add(arg1, arg2) {
@@ -112,11 +104,20 @@ const functionLookup = {
     '*': multiply,
     '**': pow,
 };
-const operators = ["+", "-", "*", "/", "(", ")", '**'];
+const operators = [
+    "(", 
+    ")",
+    '**', 
+    "*", 
+    "/",
+    "+", 
+    "-",
+     ];
 
 // MAIN FUNTIONS
-function parse(input) {
-    let op = '';
+function buildTree(input) {
+    // input is an array of characters
+    
     //Deal with '**' pow operator
     for (let i = 0; i < input.length; i++) {
         if (input[i] === '*') {
@@ -126,24 +127,39 @@ function parse(input) {
             }
         }
     };
-    console.log(input);
-    const startIndex = input.findIndex(char => operators.includes(char)); // Run to the first operator
-    op = input[startIndex];
+    //Encounter operators in PEMDAS order
+    let operIndex = -1;
+    let i = 0;
+   for (leti =0; i<operators.length; i++) {
+        operIndex = input.findIndex(char => char=== operators[i]);
+        if (operIndex >=0) {
+            break;
+        }
+    } 
+    const op = input[operIndex];
+    let newTree = new TreeNode();
     switch (op) {
         case undefined:
             //No operators, it's a number
-            return [identity, input.join(''), '']
+            newTree.value = input.join('');
+            return newTree;
         case '(':
             // Run to opposite bracket )
             const endIndex = input.findIndex(char => char === ')');
-            const expr = input.slice(startIndex + 1, endIndex);
-            const rest = input.slice(endIndex + 1);
-            return parse(evaluateExpression(expr).concat(rest));
+            const expr = input.slice(operIndex + 1, endIndex);
+            const oper = input[endIndex + 1];
+            const rest = input.slice(endIndex + 2);
+            // Build a tree, 
+            newTree.value = functionLookup[oper];
+            newTree.branch1 = buildTree(expr);
+            newTree.branch2 = buildTree(rest);
+            return newTree;
+
         case ')':
             // Shouldn't have an end bracket when reading from the right
-            return [identity, 'Error: Incorrect \')\'', ''];
+            return new TreeNode('Error')
         case '-':
-            if (startIndex === 0) {
+            if (operIndex === 0) {
                 //negative number
                 return [
                     subtract, 
@@ -152,21 +168,21 @@ function parse(input) {
 
             } else {
                 // Subtraction
-                const arg1 = input.slice(0, startIndex);
-                const arg2 = input.slice(startIndex + 1);
+                const arg1 = input.slice(0, operIndex);
+                const arg2 = input.slice(operIndex + 1);
                 return [
                     functionLookup[op],
                     evaluateExpression(arg1) ,
                     evaluateExpression(arg2)];
             }
         default:
-            const arg1 = input.slice(0, startIndex);
-            const arg2 = input.slice(startIndex + 1);
-            return [
-                functionLookup[op],
-                evaluateExpression(arg1) ,
-                evaluateExpression(arg2)];
-        // + or / or * or **
+            // + or / or * or **
+        const arg1 = input.slice(0, operIndex);
+        const arg2 = input.slice(operIndex + 1);
+        newTree.value = functionLookup[op];
+        newTree.branch1 = buildTree(arg1);
+        newTree.branch2 = buildTree(arg2);
+        return newTree;
     }
 
 
@@ -217,6 +233,7 @@ function chooser(e) {
             break;
         case 'equal':
             const text = divDisplayExpression.innerText;
+            evaluateExpression(text);
             break;
         case 'clear':
             deleteFromDisplay('clear');
