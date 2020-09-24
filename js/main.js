@@ -4,6 +4,13 @@ class TreeNode {
         this.descendents = [];
     }
 }
+function evaluateTree (t) {
+    if (isLeaf(t)) {
+        return label(t);
+    } else {
+        return label(t)(evaluateTree(branch1(t)), evaluateTree(branch2(t)));
+    }
+}
 z = new TreeNode(3);
 y = new TreeNode(2);
 x = new TreeNode(4);
