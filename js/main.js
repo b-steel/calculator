@@ -1,3 +1,42 @@
+class TreeNode {
+    constructor(value) {
+        this.value = value;
+        this.descendents = [];
+    }
+}
+z = new TreeNode(3);
+y = new TreeNode(2);
+x = new TreeNode(4);
+m = new TreeNode(multiply);
+a = new TreeNode(add);
+a.descendents.push(m, x);
+m.descendents.push(y,z);
+
+function isLeaf(t) {
+    return (t.descendents.length === 0);
+}
+function label (t) {
+    return t.value;
+}
+function branch1 (t) {
+    return t.descendents[0];
+}
+function branch2 (t) {
+    return t.descendents[1];
+}
+
+function branches (t) {
+    return t.descendents;
+}
+const pemdas = {
+    '+': 0, 
+    '-': 0,
+    '*': 1,
+    '/': 1, 
+    '**': 2, 
+    '(': 3, 
+    ')': 3
+}
 // BASIC OPERATIONS
 // For operations, args is always a two element array of argument1, argument2
 function add(arg1, arg2) {
@@ -171,8 +210,6 @@ function chooser(e) {
             break;
         case 'equal':
             const text = divDisplayExpression.innerText;
-            const ans = evaluateExpression(Array.from(text));
-            writeToAnswer(ans[0]);
             break;
         case 'clear':
             deleteFromDisplay('clear');
