@@ -1,25 +1,30 @@
+class TreeNode {
+    constructor(value) {
+        this.value = value;
+        this.descendents = [];
+    }
+}
 // BASIC OPERATIONS
 // For operations, args is always a two element array of argument1, argument2
 function add(arg1, arg2) {
-    return String(parseFloat(arg1) + parseFloat(arg2));
+    return arg1 + arg2;
 };
 function multiply(arg1, arg2) {
-    return String(parseFloat(arg1) * parseFloat(arg2));
-
+    return arg1 * arg2;
 };
 function divide(arg1, arg2) {
     try {
-        return String(parseFloat(arg1) / parseFloat(arg2));
+        return arg1 / arg2;
     }
     catch (err) {
         writeToExpression(err.message);
     }
 };
 function subtract(arg1, arg2) {
-    return String(parseFloat(arg1) - parseFloat(arg2));
+    return arg1 - arg2;
 };
 function pow(arg1, arg2) {
-    return String(parseFloat(arg1) ** parseFloat(arg2));
+    return arg1 ** arg2;
 }
 
 // HTML and CSS references
@@ -32,7 +37,8 @@ divNumbers = Array.from(document.getElementsByClassName('numbers'))[0];
 
 // VARIABLES
 let displayValue = NaN;
-let lastButton;
+const expTree = new TreeNode;
+let currTree = new TreeNode;
 const buttons = [
 
     { id: 'btn-num7', class: 'number', text: '7', display: '7' },
@@ -66,129 +72,148 @@ const functionLookup = {
     '*': multiply,
     '**': pow,
 };
+const pemdas = {
+    '+': 0, 
+    '-': 0,
+    '*': 1,
+    '/': 1, 
+    '**': 2, 
+    '(': 3, 
+    ')': 3
+}
 const operators = ["+", "-", "*", "/", "(", ")", '**'];
 
 // MAIN FUNTIONS
-function parse(input) {
-    let op = '';
-    //Deal with '**' pow operator
-    for (let i = 0; i < input.length; i++) {
-        if (input[i] === '*') {
-            if (i !== input.length - 1 && input[i + 1] === '*') {
-                // We have a pow operator
-                input.splice(i, 2, '**'); // replace , '*', '*', with ,'**', 
-            }
-        }
-    };
-    console.log(input);
-    const startIndex = input.findIndex(char => operators.includes(char)); // Run to the first operator
-    op = input[startIndex];
-    switch (op) {
-        case undefined:
-            //No operators, it's a number
-            return [identity, input.join(''), '']
-        case '(':
-            // Run to opposite bracket )
-            const endIndex = input.findIndex(char => char === ')');
-            const expr = input.slice(startIndex + 1, endIndex);
-            const rest = input.slice(endIndex + 1);
-            return parse(evaluateExpression(expr).concat(rest));
-        case ')':
-            // Shouldn't have an end bracket when reading from the right
-            return [identity, 'Error: Incorrect \')\'', ''];
-        case '-':
-            if (startIndex === 0) {
-                //negative number
-                return [
-                    subtract, 
-                    '0', 
-                    evaluateExpression(input.slice(1))]
-
-            } else {
-                // Subtraction
-                const arg1 = input.slice(0, startIndex);
-                const arg2 = input.slice(startIndex + 1);
-                return [
-                    functionLookup[op],
-                    evaluateExpression(arg1) ,
-                    evaluateExpression(arg2)];
-            }
-        default:
-            const arg1 = input.slice(0, startIndex);
-            const arg2 = input.slice(startIndex + 1);
-            return [
-                functionLookup[op],
-                evaluateExpression(arg1) ,
-                evaluateExpression(arg2)];
-        // + or / or * or **
-    }
-
-
-    // if(isArgument(arg1) && isArgument(arg2)) {
-    //     result = operator(arg1, arg2);
-    // } else
-};
-
 function identity(arg1, arg2) {
     return arg1;
 }
-
 function writeToExpression(message) {
     divDisplayExpression.innerText = divDisplayExpression.innerText + message;
 };
-
 function writeToAnswer(message) {
     divDisplayAnswer.innerText = message;
 };
-
 function deleteFromDisplay(arg) {
     if (arg === 'clear') {
         divDisplayExpression.innerText = '';
     } else {
         let text = divDisplayExpression.innerText;
         divDisplayExpression.innerText = text.slice(0, text.length - 1);
+        if (text[-1] === '.') {
+            enableDecimal();
+        }
     }
 };
-
-function evaluateExpression(exp) {
-    // Exp is an array of characters
-    let operator, arg1, arg2;
-    // Parse
-    [operator, arg1, arg2] = parse(exp);
-    // Evalutate
-    return [operator(arg1, arg2)];
+function clearExpression() {
+    divDisplayExpression.innerText = '';
+    enableDecimal();
 }
 
+function enableDecimal () {
+    
+}
+
+
 function chooser(e) {
-    // All event listeners call chooser, which looks up the function to call
-    // Each button / key ID will be in the eventLookup table to determine what to do with it
+    // All event listeners call chooser
     let id = e.target.id; // strip the 'btn-' or the 'key-'
     let button = buttons.find(obj => obj.id === id);
-
-    switch (id.slice(4)) {
-        case 'delete':
+    let name = button.text;
+    switch (name) {
+        case 'del':
             deleteFromDisplay(1);
             break;
-        case 'equal':
-            const text = divDisplayExpression.innerText;
-            const ans = evaluateExpression(Array.from(text));
-            writeToAnswer(ans[0]);
+        case '=':
             break;
         case 'clear':
             deleteFromDisplay('clear');
+            clearExpression();
             break;
         default:
             writeToExpression(button.display);
+            console.log(name);
+            switch (name) {
+                case '(':
+                    break;
+                case ')':
+                    break;
+                case '*' :
+                case '+' :
+                case '/' :
+                case '-' :
+                case '**':
+                    if(!currTree.value) {
+                        currTree.value = functionLookup[name];
+                    } else {
+                        if (currTree.descendents[1] !== undefined) {
+                            //Error
+                        } else if (pemdas[functionLookup[name]] 
+                            > pemdas[functionLookup[currTree.valeu]]) {
+                        }
+                            
+                        }
+                    } 
+                    break;
+                case '.':
+                    disableDecimal()
+                    // No break since we want to run the default and add the decimal 
+                default:
+                    // Numbers and decimal
+                    if (currTree.value) {
+                        if (currTree.descendents[1] !== undefined) {
+                            currTree.descendents[1] += button.display;
+                        } else {
+                            currTree.descendents[1] = button.display;
+                        }
+                    } else {
+                        if (currTree.descendents[0] !== undefined) {
+                            currTree.descendents[0] += button.display;
+                        } else {
+                            currTree.descendents[0] = button.display;
+                        }
+                    }
+            }
             break;
+
     }
-    lastButton = button;
+    console.log(currTree);
 };
+
+function evaluateTree (t) {
+    if (isLeaf(t)) {
+        return label(t);
+    } else {
+        return label(t)(evaluateTree(branch1(t)), evaluateTree(branch2(t)));
+    }
+}
+z = new TreeNode(3);
+y = new TreeNode(2);
+x = new TreeNode(4);
+m = new TreeNode(multiply);
+a = new TreeNode(add);
+a.descendents.push(m, x);
+m.descendents.push(y,z);
+
+function isLeaf(t) {
+    return (t.descendents.length === 0);
+}
+function label (t) {
+    return t.value;
+}
+function branch1 (t) {
+    return t.descendents[0];
+}
+function branch2 (t) {
+    return t.descendents[1];
+}
+
+function branches (t) {
+    return t.descendents;
+}
 
 function startup() {
     makeButtons();
     addButtonListeners();
-
-
 };
 function addButtonListeners() {
     buttons.forEach(button => {
