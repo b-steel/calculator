@@ -1,57 +1,46 @@
-class Tree {
+class TreeNode {
     constructor(value) {
         this.value = value;
         this.branch1 = [];
         this.branch2 = []
     }
-    //Getter
-    get evaluate() {
-        return this.evaluateTree();
-    }
-    get isLeaf() {
-        return this.computeIsLeaf();
-    }
-
-    //Method
-    evaluateTree() {
-        if (this.isLeaf) {
-            return this.value;
-        } else {
-            return this.value(this.branch1.evaluate, this.branch2.evaluate);
-        }
-
-    }
-
-    computeIsLeaf() {
-        return (this.branch1.length === 0 && this.branch2.length === 0);
-    }
-
-    // Tree Tests
-    // let a = new Tree(add);
-    // let b = new Tree('3');
-    // let c = new Tree('4');
-    // let d = new Tree(multiply);
-    // let e = new Tree('2');
-    // d.branch1 = e;
-    // d.branch2 = a;
-    // a.branch1 = b;
-    // a.branch2 = c;
-
-
 }
 const mismatchedParenthesisErrorMessage = 'Error: Mismatched Parenthesis';
-const zeroDivisionError = 'Error: Division by Zero';
-const operationFunctions = {
-    '+': (a,b) => a+b,
-    '-': (a,b) => a-b, 
-    '*': (a,b) => a*b, 
-    '**': (a,b) => a**b,
-    '/': (a,b) => {
-        try{ return a/b;}
-        catch(err) {return zeroDivisionError;}
+function evaluateTree(t) {
+    if (isLeaf(t)) {
+        return t.value;
+    } else {
+        return t.value(evaluateTree(t.branch1), evaluateTree(t.branch2));
     }
 }
-const operators = Array.from('+-*/()').concat('**');
+
+function isLeaf(t) {
+    return (t.branch1.length === 0 && t.branch2.length === 0);
+}
+
+// BASIC OPERATIONS
+// For operations, args is always a two element array of argument1, argument2
+function add(arg1, arg2) {
+    return String(parseFloat(arg1) + parseFloat(arg2));
+};
+function multiply(arg1, arg2) {
+    return String(parseFloat(arg1) * parseFloat(arg2));
+
+};
+function divide(arg1, arg2) {
+    try {
+        return String(parseFloat(arg1) / parseFloat(arg2));
+    }
+    catch (err) {
+        writeToAnswer(err.message);
+    }
+};
+function subtract(arg1, arg2) {
+    return String(parseFloat(arg1) - parseFloat(arg2));
+};
+function pow(arg1, arg2) {
+    return String(parseFloat(arg1) ** parseFloat(arg2));
+}
 
 // HTML and CSS references
 divCalculator = Array.from(document.getElementsByClassName('calculator'))[0];
@@ -61,7 +50,9 @@ divInputs = Array.from(document.getElementsByClassName('inputs'))[0];
 divOperators = Array.from(document.getElementsByClassName('operators'))[0];
 divNumbers = Array.from(document.getElementsByClassName('numbers'))[0];
 
-// Create HTML Items
+// VARIABLES
+let displayValue = NaN;
+let lastButton;
 const buttons = [
 
     { id: 'btn-num7', class: 'number', text: '7', display: '7' },
@@ -75,7 +66,7 @@ const buttons = [
     { id: 'btn-num3', class: 'number', text: '3', display: '3' },
     { id: 'btn-num0', class: 'number', text: '0', display: '0' },
     { id: 'btn-decimal', class: 'number', text: '.', display: '.' },
-    
+
     { id: 'btn-delete', class: 'operator', text: 'del', display: '' },
     { id: 'btn-clear', class: 'special', text: 'clear', display: '' },
     { id: 'btn-open-parenthesis', class: 'operator', text: '(', display: '(' },
@@ -86,29 +77,8 @@ const buttons = [
     { id: 'btn-divide', class: 'operator', text: '/', display: '/' },
     { id: 'btn-pow', class: 'operator', text: 'pow', display: '**' },
     { id: 'btn-equal', class: 'special', text: '=', display: '=' },
-    
-];
-function makeButtons() {
-    buttons.forEach(item => {
-        const newButton = document.createElement('button');
-        newButton.id = item.id;
-        newButton.classList.add(item.class);
-        newButton.innerText = item.text;
-        
-        if (item.class === 'number') {
-            divNumbers.appendChild(newButton);
-        } else {
-            divOperators.appendChild(newButton);
-        }
-    });
-};
-makeButtons();
-function addButtonListeners() {
-    buttons.forEach(button => {
-        document.getElementById(button.id).addEventListener('click', btnClick);
-    });
-};
 
+];
 const keys = Array.from('.1234567890()*/=-+c').concat('Backspace', 'Enter');
 const keyMap = [
 
@@ -123,7 +93,7 @@ const keyMap = [
     { key:'9', text: "9" },
     { key:'0', text: "0" },
     { key:'.', text: "." },
-    
+
     { key:'=', text: "equal" },
     { key:'+', text: "+" },
     { key:'-', text: "-" },
@@ -135,55 +105,38 @@ const keyMap = [
     { key:'Backspace', text: 'delete'},
     { key:'c', text: 'clear'}
 ];
-function keyPress(e) {
-    if (keys.includes(e.key)) {
-        keyToChooser(keyMap.find(obj => obj.key === e.key));
-    }
-}
-
-
+const functionLookup = {
+    '+': add,
+    '-': subtract,
+    '/': divide,
+    '*': multiply,
+    '**': pow,
+};
+const operators = [
+    "(",
+    ")",
+    "+",
+    "-",
+    "*",
+    "/",
+    '**',
+];
 
 // MAIN FUNCTIONS
-function convertInputToMathArray(inputArray) {
-    function combinePow(input) {
-        // input is an array
-        //Deal with '**' pow operator
-        for (let i = 0; i < input.length; i++) {
-            if (input[i] === '*') {
-                if (i !== input.length - 1 && input[i + 1] === '*') {
-                    // We have a pow operator
-                    input.splice(i, 2, '**'); // replace , '*', '*', with ,'**', 
-                }
-            }
-        };
-        return input;
-    };
-    inputArray = combinePow(inputArray);
+function combinePow(input) {
+    // input is an array of characters
 
-    function makeNumbers (input) {
-        for (let i = 0; i < input.length; i++) {
-            if (i!==input.length-1 && !operators.includes(input[i]) && !operators.includes(input[i+1])) {
-                input[i] = input[i] + input[i+1];
-                input.splice(i+1, 1);
-                i--;
+    //Deal with '**' pow operator
+    for (let i = 0; i < input.length; i++) {
+        if (input[i] === '*') {
+            if (i !== input.length - 1 && input[i + 1] === '*') {
+                // We have a pow operator
+                input.splice(i, 2, '**'); // replace , '*', '*', with ,'**', 
             }
         }
-        return input;
     };
-    inputArray = makeNumbers(inputArray);
-
-    function addOperators(input) {
-        for (let i = 0; i < input.length; i++) {
-            if(Object.keys(operationFunctions).includes(input[i])) {
-                input[i] = operationFunctions[input[i]];
-            }
-        }
-        return input;
-    };
-    inputArray = addOperators(inputArray);
-
-    return inputArray;
-}
+    return input;
+};
 
 function evalParenthesis(arg) {
     const first = input.findIndex(char => char === '(');
@@ -210,7 +163,14 @@ function evalParenthesis(arg) {
     // evaluate the expression, then rebuild the tree
     return buildTree(pre.concat(buildTree(expr)).concat(rest));
 };
-
+function addNode(t, n, branch) {
+    if (branch === 'left') {
+        t.branch1 = n;
+    } else {
+        t.branch2 = n;
+    }
+    return t;
+}
 function buildTree(arg) {
 
     // input is an array of characters / TreeNodes
@@ -315,15 +275,41 @@ function chooser(switchText, writeText) {
             break;
     }
 };
+
+function startup() {
+    makeButtons();
+    addButtonListeners();
+};
 function btnClick(e) {
     btnToChooser(e.target.id);
 }
 
-
-
-
-function startup() {
-    addButtonListeners();
-window.addEventListener('keydown', keyPress);
+function addButtonListeners() {
+    buttons.forEach(button => {
+        document.getElementById(button.id).addEventListener('click', btnClick);
+    });
 };
+function keyPress(e) {
+    if (keys.includes(e.key)) {
+        keyToChooser(keyMap.find(obj => obj.key === e.key));
+    }
+}
+
+
+function makeButtons() {
+    buttons.forEach(item => {
+        const newButton = document.createElement('button');
+        newButton.id = item.id;
+        newButton.classList.add(item.class);
+        newButton.innerText = item.text;
+
+        if (item.class === 'number') {
+            divNumbers.appendChild(newButton);
+        } else {
+            divOperators.appendChild(newButton);
+        }
+    });
+};
+
 window.addEventListener('load', startup);
+window.addEventListener('keydown', keyPress);
