@@ -114,8 +114,8 @@ const operators = [
     "-",
      ];
 
-// MAIN FUNTIONS
-function buildTree(input) {
+// MAIN FUNCTIONS
+function combinePow(input) {
     // input is an array of characters
     
     //Deal with '**' pow operator
@@ -127,10 +127,42 @@ function buildTree(input) {
             }
         }
     };
+    return input;
+};
+
+function evalParenthesis (arg) {
+    const first = input.findIndex(char => char === ')');
+    let count = 0;
+    let matched = false;
+    let end;
+    for (let i = first + 1; i < input.length; i++) {
+        if (input[i] === '(') {
+            count ++;
+        } else if (input[i] === ')' && count === 0) {
+            end = i;
+            matched = true;
+        } else if (input[i] === ')') {
+            count--;
+        } 
+    }
+    if (!matched) {
+        //Error
+    }
+    const pre = input.slice(0,first);
+    const expr = input.slice(first +1, end); // dropping the ()
+    const rest = input.slice(end + 2); // dropping the ()
+
+    // evaluate the expression, then rebuild the tree
+    return buildTree(pre.concat(evaluateTree(buildTree(expr))).concat(rest));
+};
+function buildTree(arg) {
+    // input is an array of characters
+    input = combinePow(arg); // Deal with the pesky ** operator
+
     //Encounter operators in PEMDAS order
     let operIndex = -1;
     let i = 0;
-   for (leti =0; i<operators.length; i++) {
+   for (let i =0; i<operators.length; i++) {
         operIndex = input.findIndex(char => char=== operators[i]);
         if (operIndex >=0) {
             break;
@@ -144,20 +176,12 @@ function buildTree(input) {
             newTree.value = input.join('');
             return newTree;
         case '(':
-            // Run to opposite bracket )
-            const endIndex = input.findIndex(char => char === ')');
-            const expr = input.slice(operIndex + 1, endIndex);
-            const oper = input[endIndex + 1];
-            const rest = input.slice(endIndex + 2);
-            // Build a tree, 
-            newTree.value = functionLookup[oper];
-            newTree.branch1 = buildTree(expr);
-            newTree.branch2 = buildTree(rest);
-            return newTree;
+            return extractParenthesisGroup(input);
 
         case ')':
             // Shouldn't have an end bracket when reading from the right
-            return new TreeNode('Error')
+            // Error
+            break;
         case '-':
             if (operIndex === 0) {
                 //negative number
@@ -190,6 +214,9 @@ function buildTree(input) {
     //     result = operator(arg1, arg2);
     // } else
 };
+function lookLeft (arg) {
+    
+}
 
 function identity(arg1, arg2) {
     return arg1;
@@ -212,14 +239,6 @@ function deleteFromDisplay(arg) {
     }
 };
 
-function evaluateExpression(exp) {
-    // Exp is an array of characters
-    let operator, arg1, arg2;
-    // Parse
-    [operator, arg1, arg2] = parse(exp);
-    // Evalutate
-    return [operator(arg1, arg2)];
-}
 
 function chooser(e) {
     // All event listeners call chooser, which looks up the function to call
