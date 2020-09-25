@@ -5,36 +5,19 @@ class TreeNode {
         this.branch2 = []
     }
 }
-function evaluateTree (t) {
+const mismatchedParenthesisErrorMessage = 'Error: Mismatched Parenthesis';
+function evaluateTree(t) {
     if (isLeaf(t)) {
         return t.value;
     } else {
         return t.value(evaluateTree(t.branch1), evaluateTree(t.branch2));
     }
 }
-z = new TreeNode(3);
-y = new TreeNode(2);
-x = new TreeNode(4);
-m = new TreeNode(multiply);
-a = new TreeNode(add);
-a.branch1 = 4;
-a.branch2 = m;
-m.branch1 = 2;
-m.branch2 = 3;
 
 function isLeaf(t) {
-    return (t.branch1.length === 0 && t.branch2.length === 0)   ;
+    return (t.branch1.length === 0 && t.branch2.length === 0);
 }
 
-const pemdas = {
-    '+': 0, 
-    '-': 0,
-    '*': 1,
-    '/': 1, 
-    '**': 2, 
-    '(': 3, 
-    ')': 3
-};
 // BASIC OPERATIONS
 // For operations, args is always a two element array of argument1, argument2
 function add(arg1, arg2) {
@@ -49,7 +32,7 @@ function divide(arg1, arg2) {
         return String(parseFloat(arg1) / parseFloat(arg2));
     }
     catch (err) {
-        writeToExpression(err.message);
+        writeToAnswer(err.message);
     }
 };
 function subtract(arg1, arg2) {
@@ -96,6 +79,32 @@ const buttons = [
     { id: 'btn-equal', class: 'special', text: '=', display: '=' },
 
 ];
+const keys = Array.from('.1234567890()*/=-+c').concat('Backspace', 'Enter');
+const keyMap = [
+
+    { key:'1', text: "1" },
+    { key:'2', text: "2" },
+    { key:'3', text: "3" },
+    { key:'4', text: "4" },
+    { key:'5', text: "5" },
+    { key:'6', text: "6" },
+    { key:'7', text: "7" },
+    { key:'8', text: "8" },
+    { key:'9', text: "9" },
+    { key:'0', text: "0" },
+    { key:'.', text: "." },
+
+    { key:'=', text: "equal" },
+    { key:'+', text: "+" },
+    { key:'-', text: "-" },
+    { key:'*', text: "*" },
+    { key:'/', text: "/" },
+    { key:'(', text: "(" },
+    { key:')', text: ")" },
+    { key:'Enter', text: "equal" },
+    { key:'Backspace', text: 'delete'},
+    { key:'c', text: 'clear'}
+];
 const functionLookup = {
     '+': add,
     '-': subtract,
@@ -104,19 +113,19 @@ const functionLookup = {
     '**': pow,
 };
 const operators = [
-    "(", 
+    "(",
     ")",
-    "+", 
+    "+",
     "-",
-    "*", 
+    "*",
     "/",
-    '**', 
-     ];
+    '**',
+];
 
 // MAIN FUNCTIONS
 function combinePow(input) {
     // input is an array of characters
-    
+
     //Deal with '**' pow operator
     for (let i = 0; i < input.length; i++) {
         if (input[i] === '*') {
@@ -129,32 +138,32 @@ function combinePow(input) {
     return input;
 };
 
-function evalParenthesis (arg) {
+function evalParenthesis(arg) {
     const first = input.findIndex(char => char === '(');
     let count = 0;
     let matched = false;
     let end;
     for (let i = first + 1; i < input.length; i++) {
         if (input[i] === '(') {
-            count ++;
+            count++;
         } else if (input[i] === ')' && count === 0) {
             end = i;
             matched = true;
         } else if (input[i] === ')') {
             count--;
-        } 
+        }
     }
     if (!matched) {
-        //Error
+        writeToAnswer(mismatchedParenthesisErrorMessage);
     }
-    const pre = input.slice(0,first);
-    const expr = input.slice(first +1, end); // dropping the ()
+    const pre = input.slice(0, first);
+    const expr = input.slice(first + 1, end); // dropping the ()
     const rest = input.slice(end + 1); // dropping the ()
 
     // evaluate the expression, then rebuild the tree
     return buildTree(pre.concat(buildTree(expr)).concat(rest));
 };
-function addNode (t, n, branch) {
+function addNode(t, n, branch) {
     if (branch === 'left') {
         t.branch1 = n;
     } else {
@@ -163,25 +172,25 @@ function addNode (t, n, branch) {
     return t;
 }
 function buildTree(arg) {
-    
+
     // input is an array of characters / TreeNodes
     input = combinePow(arg); // Deal with the pesky ** operator
 
     //Encounter operators in PEMDAS order
     let operIndex = -1;
     let i = 0;
-   for (let i =0; i<operators.length; i++) {
-        operIndex = input.findIndex(char => char=== operators[i]);
-        if (operIndex >=0) {
+    for (let i = 0; i < operators.length; i++) {
+        operIndex = input.findIndex(char => char === operators[i]);
+        if (operIndex >= 0) {
             break;
         }
-    } 
+    }
     const op = input[operIndex];
     let newTree = new TreeNode();
     switch (op) {
         case undefined:
             //No operators, it's a number or a node
-            if (typeof(input[0]) === 'object') {
+            if (typeof (input[0]) === 'object') {
                 return input[0];  // Got a tree already
             } else {
                 newTree.value = input.join('');
@@ -193,16 +202,17 @@ function buildTree(arg) {
 
         case ')':
             // Shouldn't have an end bracket when reading from the right
-            // Error
+            writeToAnswer(mismatchedParenthesisErrorMessage);
+            
             break;
         default:
             let arg1;
-            if(op === '-') {
+            if (op === '-') {
                 if (operIndex === 0) {
                     //negative number
-                arg1 = '0';
+                    arg1 = '0';
                 } else {
-                arg1 = input.slice(0, operIndex);
+                    arg1 = input.slice(0, operIndex);
                 }
             } else {
                 arg1 = input.slice(0, operIndex);
@@ -238,14 +248,18 @@ function deleteFromDisplay(arg) {
     }
 };
 
-
-function chooser(e) {
-    // All event listeners call chooser, which looks up the function to call
-    // Each button / key ID will be in the eventLookup table to determine what to do with it
-    let id = e.target.id; // strip the 'btn-' or the 'key-'
+function btnToChooser(id) {
     let button = buttons.find(obj => obj.id === id);
+    chooser(id.slice(4), button.diplay);
+ 
+}
+function keyToChooser(key) {
+    chooser(key.text, key.text);    
+}
 
-    switch (id.slice(4)) {
+function chooser(switchText, writeText) {
+    // All event listeners call chooser, which looks up the function to call
+    switch (switchText) {
         case 'delete':
             deleteFromDisplay(1);
             break;
@@ -257,7 +271,7 @@ function chooser(e) {
             deleteFromDisplay('clear');
             break;
         default:
-            writeToExpression(button.display);
+            writeToExpression(writeText);
             break;
     }
 };
@@ -265,14 +279,23 @@ function chooser(e) {
 function startup() {
     makeButtons();
     addButtonListeners();
-
-
 };
+function btnClick(e) {
+    btnToChooser(e.target.id);
+}
+
 function addButtonListeners() {
     buttons.forEach(button => {
-        document.getElementById(button.id).addEventListener('click', chooser);
+        document.getElementById(button.id).addEventListener('click', btnClick);
     });
 };
+function keyPress(e) {
+    if (keys.includes(e.key)) {
+        keyToChooser(keyMap.find(obj => obj.key === e.key));
+    }
+}
+
+
 function makeButtons() {
     buttons.forEach(item => {
         const newButton = document.createElement('button');
@@ -289,3 +312,4 @@ function makeButtons() {
 };
 
 window.addEventListener('load', startup);
+window.addEventListener('keydown', keyPress);
