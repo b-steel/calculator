@@ -182,6 +182,7 @@ function convertInputToMathArray(inputArray) {
 
     function groupByParenthesis(input) {
         const first = input.findIndex(char => char === '(');
+        if (first === -1) return input; // no parenthesis
         let count = 0;
         let matched = false;
         let end;
@@ -202,17 +203,21 @@ function convertInputToMathArray(inputArray) {
         const pre = input.slice(0, first);
         const expr = input.slice(first + 1, end); // dropping the ()
         const rest = input.slice(end + 1); // dropping the ()
-        return pre.concat([expr]).concat(rest);
+        return pre.concat([groupByParenthesis(expr)]).concat(groupByParenthesis(rest));
     };
     
     return groupByParenthesis(addOperators(makeNumbers(combinePow(inputArray))));
 }
 
 function makeTreeFromMathArray (mathArray) {
-    
-    while(mathArray.length) {
+    let count = 0;
+    let workingTree = new Tree();
+
+    while(mathArray.length!==1 || count !== 100) {
+        let argTree = new Tree();
+
         opers = Array.from(Object.values(operationFunctions));
-        const workingTree = 
+        count++;
         while (opers.length) {
             let indx = mathArray.findIndex(item => item === opers[0]);
             if (indx === 0 || indx === mathArray.length-1) {
@@ -225,23 +230,18 @@ function makeTreeFromMathArray (mathArray) {
                     typeof(mathArray[indx+1]) === 'function') {
                         return syntaxErrorMessage; //two operators 
                 } else {
-                    const newTree = new Tree(mathArray[indx]);
-                    newTree.branch1 = mathArray[indx-1];
-                    newTree.branch2 = mathArray[indx+1];
-                    mathArray.splice(indx-1, 3)
+                    argTree.value = mathArray[indx];
+                    argTree.branch1 = new Tree (mathArray[indx-1]);
+                    argTree.branch2 = new Tree (mathArray[indx+1]);
+                    mathArray.splice(indx-1, 3, newTree) // Insert tree into array
                 }
-            
-
-            }
-            if (typeof(item)==='object') { //Array-->Parenthesis
-
-            } else if (typeof(item)==='function') { //Function --> EMDAS
-
-            } else { // Number
-
             }
         }
+        // No opperators, just a number
+        mathArray[0] = new Tree(mathArray[0]);
+
     }
+    return mathArray[0];
 }
 
 
