@@ -1,7 +1,6 @@
 class TreeNode {
     constructor(value) {
         this.value = value;
-        this.priority = 0;
         this.branch1 = [];
         this.branch2 = []
     }
@@ -107,11 +106,11 @@ const functionLookup = {
 const operators = [
     "(", 
     ")",
-    '**', 
-    "*", 
-    "/",
     "+", 
     "-",
+    "*", 
+    "/",
+    '**', 
      ];
 
 // MAIN FUNCTIONS
@@ -131,7 +130,7 @@ function combinePow(input) {
 };
 
 function evalParenthesis (arg) {
-    const first = input.findIndex(char => char === ')');
+    const first = input.findIndex(char => char === '(');
     let count = 0;
     let matched = false;
     let end;
@@ -150,13 +149,22 @@ function evalParenthesis (arg) {
     }
     const pre = input.slice(0,first);
     const expr = input.slice(first +1, end); // dropping the ()
-    const rest = input.slice(end + 2); // dropping the ()
+    const rest = input.slice(end + 1); // dropping the ()
 
     // evaluate the expression, then rebuild the tree
-    return buildTree(pre.concat(evaluateTree(buildTree(expr))).concat(rest));
+    return buildTree(pre.concat(buildTree(expr)).concat(rest));
 };
+function addNode (t, n, branch) {
+    if (branch === 'left') {
+        t.branch1 = n;
+    } else {
+        t.branch2 = n;
+    }
+    return t;
+}
 function buildTree(arg) {
-    // input is an array of characters
+    
+    // input is an array of characters / TreeNodes
     input = combinePow(arg); // Deal with the pesky ** operator
 
     //Encounter operators in PEMDAS order
@@ -172,51 +180,42 @@ function buildTree(arg) {
     let newTree = new TreeNode();
     switch (op) {
         case undefined:
-            //No operators, it's a number
-            newTree.value = input.join('');
-            return newTree;
+            //No operators, it's a number or a node
+            if (typeof(input[0]) === 'object') {
+                return input[0];  // Got a tree already
+            } else {
+                newTree.value = input.join('');
+                return newTree;
+
+            }
         case '(':
-            return extractParenthesisGroup(input);
+            return evalParenthesis(input);
 
         case ')':
             // Shouldn't have an end bracket when reading from the right
             // Error
             break;
-        case '-':
-            if (operIndex === 0) {
-                //negative number
-                return [
-                    subtract, 
-                    '0', 
-                    evaluateExpression(input.slice(1))]
-
-            } else {
-                // Subtraction
-                const arg1 = input.slice(0, operIndex);
-                const arg2 = input.slice(operIndex + 1);
-                return [
-                    functionLookup[op],
-                    evaluateExpression(arg1) ,
-                    evaluateExpression(arg2)];
-            }
         default:
-            // + or / or * or **
-        const arg1 = input.slice(0, operIndex);
-        const arg2 = input.slice(operIndex + 1);
-        newTree.value = functionLookup[op];
-        newTree.branch1 = buildTree(arg1);
-        newTree.branch2 = buildTree(arg2);
-        return newTree;
+            let arg1;
+            if(op === '-') {
+                if (operIndex === 0) {
+                    //negative number
+                arg1 = '0';
+                } else {
+                arg1 = input.slice(0, operIndex);
+                }
+            } else {
+                arg1 = input.slice(0, operIndex);
+
+            }
+            const arg2 = input.slice(operIndex + 1);
+            newTree.value = functionLookup[op];
+            newTree.branch1 = buildTree(arg1);
+            newTree.branch2 = buildTree(arg2);
+            return newTree;
     }
-
-
-    // if(isArgument(arg1) && isArgument(arg2)) {
-    //     result = operator(arg1, arg2);
-    // } else
 };
-function lookLeft (arg) {
-    
-}
+
 
 function identity(arg1, arg2) {
     return arg1;
