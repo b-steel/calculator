@@ -250,8 +250,8 @@ function chooser(e) {
             deleteFromDisplay(1);
             break;
         case 'equal':
-            const text = divDisplayExpression.innerText;
-            evaluateExpression(text);
+            const text = Array.from(divDisplayExpression.innerText);
+            writeToAnswer(evaluateTree(buildTree(text)));
             break;
         case 'clear':
             deleteFromDisplay('clear');
@@ -260,7 +260,6 @@ function chooser(e) {
             writeToExpression(button.display);
             break;
     }
-    lastButton = button;
 };
 
 function startup() {
