@@ -41,17 +41,18 @@ class Tree {
 }
 const mismatchedParenthesisErrorMessage = 'Error: Mismatched Parenthesis';
 const zeroDivisionError = 'Error: Division by Zero';
+const syntaxErrorMessage = 'SyntaxError'
 const operationFunctions = {
+    '**': (a,b) => a**b,
+    '*': (a,b) => a*b, 
+        '/': (a,b) => {
+            try{ return a/b;}
+            catch(err) {return zeroDivisionError;}
+        },
     '+': (a,b) => a+b,
     '-': (a,b) => a-b, 
-    '*': (a,b) => a*b, 
-    '**': (a,b) => a**b,
-    '/': (a,b) => {
-        try{ return a/b;}
-        catch(err) {return zeroDivisionError;}
-    }
 }
-const operators = Array.from('+-*/()').concat('**');
+const nonNumeric = Array.from('+-*/()').concat('**');
 
 // HTML and CSS references
 divCalculator = Array.from(document.getElementsByClassName('calculator'))[0];
@@ -158,11 +159,10 @@ function convertInputToMathArray(inputArray) {
         };
         return input;
     };
-    inputArray = combinePow(inputArray);
 
     function makeNumbers (input) {
         for (let i = 0; i < input.length; i++) {
-            if (i!==input.length-1 && !operators.includes(input[i]) && !operators.includes(input[i+1])) {
+            if (i!==input.length-1 && !nonNumeric.includes(input[i]) && !nonNumeric.includes(input[i+1])) {
                 input[i] = input[i] + input[i+1];
                 input.splice(i+1, 1);
                 i--;
@@ -170,7 +170,6 @@ function convertInputToMathArray(inputArray) {
         }
         return input;
     };
-    inputArray = makeNumbers(inputArray);
 
     function addOperators(input) {
         for (let i = 0; i < input.length; i++) {
@@ -180,51 +179,73 @@ function convertInputToMathArray(inputArray) {
         }
         return input;
     };
-    inputArray = addOperators(inputArray);
 
-    return inputArray;
+    function groupByParenthesis(input) {
+        const first = input.findIndex(char => char === '(');
+        let count = 0;
+        let matched = false;
+        let end;
+        for (let i = first + 1; i < input.length; i++) {
+            if (input[i] === '(') {
+                count++;
+            } else if (input[i] === ')' && count === 0) {
+                end = i;
+                matched = true;
+            } else if (input[i] === ')') {
+                count--;
+            }
+        }
+        if (!matched) {
+            writeToAnswer(mismatchedParenthesisErrorMessage);
+        }
+    
+        const pre = input.slice(0, first);
+        const expr = input.slice(first + 1, end); // dropping the ()
+        const rest = input.slice(end + 1); // dropping the ()
+        return pre.concat([expr]).concat(rest);
+    };
+    
+    return groupByParenthesis(addOperators(makeNumbers(combinePow(inputArray))));
 }
 
-function evalParenthesis(arg) {
-    const first = input.findIndex(char => char === '(');
-    let count = 0;
-    let matched = false;
-    let end;
-    for (let i = first + 1; i < input.length; i++) {
-        if (input[i] === '(') {
-            count++;
-        } else if (input[i] === ')' && count === 0) {
-            end = i;
-            matched = true;
-        } else if (input[i] === ')') {
-            count--;
+function makeTreeFromMathArray (mathArray) {
+    
+    while(mathArray.length) {
+        opers = Array.from(Object.values(operationFunctions));
+        const workingTree = 
+        while (opers.length) {
+            let indx = mathArray.findIndex(item => item === opers[0]);
+            if (indx === 0 || indx === mathArray.length-1) {
+                return syntaxErrorMessage; //leading or trailing operator
+            }
+            else if (indx===-1) {
+                opers = opers.slice(1); //No operator found
+            } else {
+                if (typeof(mathArray[indx-1]) === 'function' ||
+                    typeof(mathArray[indx+1]) === 'function') {
+                        return syntaxErrorMessage; //two operators 
+                } else {
+                    const newTree = new Tree(mathArray[indx]);
+                    newTree.branch1 = mathArray[indx-1];
+                    newTree.branch2 = mathArray[indx+1];
+                    mathArray.splice(indx-1, 3)
+                }
+            
+
+            }
+            if (typeof(item)==='object') { //Array-->Parenthesis
+
+            } else if (typeof(item)==='function') { //Function --> EMDAS
+
+            } else { // Number
+
+            }
         }
     }
-    if (!matched) {
-        writeToAnswer(mismatchedParenthesisErrorMessage);
-    }
-    const pre = input.slice(0, first);
-    const expr = input.slice(first + 1, end); // dropping the ()
-    const rest = input.slice(end + 1); // dropping the ()
+}
 
-    // evaluate the expression, then rebuild the tree
-    return buildTree(pre.concat(buildTree(expr)).concat(rest));
-};
 
 function buildTree(arg) {
-
-    // input is an array of characters / TreeNodes
-    input = combinePow(arg); // Deal with the pesky ** operator
-
-    //Encounter operators in PEMDAS order
-    let operIndex = -1;
-    let i = 0;
-    for (let i = 0; i < operators.length; i++) {
-        operIndex = input.findIndex(char => char === operators[i]);
-        if (operIndex >= 0) {
-            break;
-        }
-    }
     const op = input[operIndex];
     let newTree = new TreeNode();
     switch (op) {
