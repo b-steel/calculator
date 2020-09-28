@@ -1,23 +1,27 @@
 
 const mismatchedParenthesisErrorMessage = 'Error: Mismatched Parenthesis';
 const zeroDivisionError = 'Error: Division by Zero';
-const syntaxErrorMessage = 'SyntaxError'
+const syntaxErrorMessage = 'Error: SyntaxError';
+const decimalErrorMessage = 'Error: DecimalError';
 const operationFunctions = {
     '**': (a,b) => a**b,
     '*': (a,b) => a*b, 
-        '/': (a,b) => {
-            try{ return a/b;}
-            catch(err) {return zeroDivisionError;}
-        },
+    '/': (a,b) => {
+        try{ return a/b;}
+        catch(err) {return zeroDivisionError;}
+    },
     '+': (a,b) => a+b,
     '-': (a,b) => a-b, 
-}
+};
 const nonNumeric = Array.from('+-*/()').concat('**');
+let expression = '';
+let solution = '';
+let firstCallAfterSolution = false;
 
 // HTML and CSS references
 divCalculator = Array.from(document.getElementsByClassName('calculator'))[0];
-divDisplayExpression = Array.from(document.getElementsByClassName('expression'))[0];
-divDisplayAnswer = Array.from(document.getElementsByClassName('answer'))[0];
+divExpression = Array.from(document.getElementsByClassName('expression'))[0];
+divDisplay = Array.from(document.getElementsByClassName('answer'))[0];
 divInputs = Array.from(document.getElementsByClassName('inputs'))[0];
 divOperators = Array.from(document.getElementsByClassName('operators'))[0];
 divNumbers = Array.from(document.getElementsByClassName('numbers'))[0];
@@ -129,16 +133,31 @@ function convertInputToMathArray(inputArray) {
         }
         return input;
     };
-    
+
+    function checkDecimals (input) {
+        for (let i=0; i < input.length; i++) {
+            if (input[i].includes('.')) {
+                if (input[i].includes('.', input[i].indexOf('.')+1)) {
+                    // Multiple .'s --> Error
+                    input.splice(0,0, decimalErrorMessage);
+                    i++;
+                }
+            }
+        }
+        return input;
+    };
+
     function convertStringsToNumbers(input) {
         return input.map(item => {
-            if(!nonNumeric.includes(item)) {
+            if(!nonNumeric.includes(item) && !item.includes('Err')) {
                 return parseFloat(item);
             } else {
                 return item;
             }
         });
     };
+
+    
     function addOperators(input) {
         for (let i = 0; i < input.length; i++) {
             if(Object.keys(operationFunctions).includes(input[i])) {
@@ -164,27 +183,29 @@ function convertInputToMathArray(inputArray) {
             }
         }
         if (!matched) {
-            writeToAnswer(mismatchedParenthesisErrorMessage);
-        }
-        if (input[first+1] === operationFunctions['-']) {
+            input.splice(0, 0, mismatchedParenthesisErrorMessage);
+            return input;
+        } else if (input[first+1] === operationFunctions['-']) {
             input.splice(first+1, 0, 0);
             end++;
-        }
-    
+        } 
+        
         const pre = input.slice(0, first);
         const expr = input.slice(first + 1, end); // dropping the ()
         const rest = input.slice(end + 1); // dropping the ()
+       
         return pre.concat([groupByParenthesis(expr)]).concat(groupByParenthesis(rest));
     };
-    
-    return groupByParenthesis(addOperators(convertStringsToNumbers(makeMultiDigitNumbers(combinePow(inputArray)))));
+    return groupByParenthesis(addOperators(convertStringsToNumbers(     checkDecimals(makeMultiDigitNumbers(combinePow(inputArray)))
+    )));
 }
-
 function evaluateMathArray (mathArray) {
     if(typeof(mathArray)!== 'object') return mathArray;
+    if(typeof(mathArray[0]) === 'string') return mathArray[0];
+    if(mathArray.length===1) return evaluateMathArray(mathArray[0]);
     let count = 0;
 
-    while(mathArray.length!==1 || count !== 100) {
+    while(mathArray.length!==1 &&  count <1000) {
 
         let opers = Array.from(Object.values(operationFunctions));
         count++;
@@ -212,27 +233,7 @@ function evaluateMathArray (mathArray) {
     return mathArray[0];
 }
 
-function identity(arg1, arg2) {
-    return arg1;
-}
-
-function writeToExpression(message) {
-    divDisplayExpression.innerText = divDisplayExpression.innerText + message;
-};
-
-function writeToAnswer(message) {
-    divDisplayAnswer.innerText = message;
-};
-
-function deleteFromDisplay(arg) {
-    if (arg === 'clear') {
-        divDisplayExpression.innerText = '';
-    } else {
-        let text = divDisplayExpression.innerText;
-        divDisplayExpression.innerText = text.slice(0, text.length - 1);
-    }
-};
-
+// EVENT HANDLING
 function btnToChooser(id) {
     let button = buttons.find(obj => obj.id === id);
     chooser(id.slice(4), button.diplay);
@@ -240,23 +241,92 @@ function btnToChooser(id) {
 }
 function keyToChooser(key) {
     chooser(key.text, key.text);    
+}   
+function operate (text) {
+    const val = evaluateMathArray(convertInputToMathArray(text));
+    return val>1000000 ?  val.toExponential(): val;
+}
+
+function writeToExpression(message) {
+    divExpression.innerText = message;
+};
+
+function writeToDisplay(message) {
+    divDisplay.innerText = message;
+};
+
+function appendToDisplay(item) {
+    divDisplay.innerText = divDisplay.innerText + item;
+}
+
+function deleteFromDisplay() {
+    const text = divDisplay.innerText;
+    
+    if (text.length <= String(solution).length) {
+        // Prevent deletion of original solution in the expression 
+    } else {
+        expression = expression.slice(0, expression.length-1);
+        writeToDisplay(text.slice(0, text.length - 1));
+    }
+};
+
+function allClear() {
+    writeToExpression('');
+    writeToDisplay('');
+    expression = '';
+    solution = '';
+    firstCallAfterSolution = false;
+    solutionLength = 0;
+}
+
+function enterEquation(buttonText) {
+    if (!solution) {
+        appendToDisplay(buttonText);
+        expression+=buttonText;
+    } else {
+        if (firstCallAfterSolution) {
+            if (Object.keys(operationFunctions).includes(buttonText)) {
+            //There is a previous solution AND we're calling a function 
+            writeToDisplay(solution + buttonText);  
+            firstCallAfterSolution = false;
+            expression += buttonText;
+
+            } else {
+                solution = '';
+                firstCallAfterSolution = false;
+                expression = buttonText;
+                writeToDisplay(buttonText); 
+            }
+        
+        } else {
+            //
+            expression += buttonText;
+            appendToDisplay(buttonText);
+    }
+}
 }
 
 function chooser(switchText, writeText) {
     // All event listeners call chooser, which looks up the function to call
     switch (switchText) {
         case 'delete':
-            deleteFromDisplay(1);
+            deleteFromDisplay();
             break;
         case 'equal':
-            const text = Array.from(divDisplayExpression.innerText);
-            writeToAnswer(evaluateTree(buildTree(text)));
+            const eqText = Array.from(expression);
+            solution = operate(eqText);
+            firstCallAfterSolution = true;
+            writeToDisplay(solution);
+            writeToExpression(expression);
+            expression = `(${expression})`;
+            
+
             break;
         case 'clear':
-            deleteFromDisplay('clear');
+            allClear();
             break;
         default:
-            writeToExpression(writeText);
+            enterEquation(writeText);
             break;
     }
 };
@@ -272,3 +342,6 @@ function startup() {
 window.addEventListener('keydown', keyPress);
 };
 window.addEventListener('load', startup);
+
+//TODO
+//make it pretty
