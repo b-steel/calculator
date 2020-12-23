@@ -1,5 +1,7 @@
 # calculator
 
+[Live Preview](https://b-steel.github.io/calculator/)
+
 A simple caclulator project from The Odin Projects's Fundamentals curriculum. 
 [Link to assignment](https://www.theodinproject.com/courses/foundations/lessons/calculator)
 
