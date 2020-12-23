@@ -1,9 +1,9 @@
 .background {
-    background-image: url(/images/triangle.png);
+    /* background-image: url(/images/triangle.png);
     background-size: 100vw 100vh;
-    background-repeat: no-repeat;
+    background-repeat: no-repeat; */
     height: 97vh;
-    background-color: rgb(255, 156, 119);
+    background-color: rgba(224, 166, 5, 0.555);
 }
 button {
     border-radius: 0;
